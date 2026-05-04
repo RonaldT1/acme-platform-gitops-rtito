@@ -18,14 +18,14 @@ The goal is to keep a clear trail of:
 bootcamp-2026-4/
 ├── README.md              # This file (general guide for everyone)
 ├── .gitignore
-└── dia-01/                # One folder per bootcamp day
+└── day-01/                # One folder per bootcamp day
     ├── README.md          # Daily summary (objective, progress, blockers)
-    ├── notas/             # Notes, commands, screenshots
-    ├── ejercicios/        # Code, pipelines, scripts done that day
-    └── entregables/       # Final deliverables for the day
+    ├── notes/             # Notes, commands, screenshots
+    ├── exercises/         # Code, pipelines, scripts done that day
+    └── deliverables/      # Final deliverables for the day
 ```
 
-When a new day starts, copy the `dia-01/` layout and rename it (`dia-02/`, `dia-03/`, ...).
+When a new day starts, copy the `day-01/` layout and rename it (`day-02/`, `day-03/`, ...).
 
 ## Branching model
 
@@ -41,16 +41,16 @@ git push -u origin <your-github-username>
 ## Daily workflow
 
 1. `git checkout <your-github-username> && git pull`
-2. Create or open the folder for the current day: `dia-NN/`
-3. Work inside that folder (`notas/`, `ejercicios/`, `entregables/`)
-4. Update `dia-NN/README.md` with the day's objective, progress and blockers
+2. Create or open the folder for the current day: `day-NN/`
+3. Work inside that folder (`notes/`, `exercises/`, `deliverables/`)
+4. Update `day-NN/README.md` with the day's objective, progress and blockers
 5. Commit and push at the end of the day
 6. When the day is closed: open a pull request from your branch to `main`
 
 ## Conventions
 
-- **Language**: notes and READMEs in Spanish; code, commands, and filenames in English.
-- **Commits**: short imperative messages prefixed with the day. Example: `dia-03: add build pipeline`.
+- **Language**: everything in English — README files, notes, code, commands, and filenames.
+- **Commits**: short imperative messages prefixed with the day. Example: `day-03: add build pipeline`.
 - **Branches**: personal work stays in `<your-github-username>`; PRs target `main` at the end of each day.
 - **No co-authors** in commits.
 - **Secrets never committed**: use `.env` (already gitignored) and share credentials out-of-band.
