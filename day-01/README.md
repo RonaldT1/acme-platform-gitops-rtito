@@ -1,34 +1,73 @@
-# Day 01 — YYYY-MM-DD
-
-> Template for a daily entry. Copy this folder (`dia-01/`) and rename it
-> (`dia-02/`, `dia-03/`, ...) when a new day starts. Fill in each section
-> as the day progresses. Keep it short — this is a log, not a report.
+# Day 01 — 2026-05-04
 
 ## Objective
 
-_What topic / exercise is covered today._
+Build a simple Node.js API, containerize it using Docker, and configure a Terraform remote backend using AWS (S3 + DynamoDB).
+
+---
 
 ## Context / setup
 
-- _What had to be ready before starting (accounts, access, repos, tools)._
+* AWS account (bootcamp) configured using profile (`AWS_PROFILE=bootcamp`)
+* WSL environment used for AWS CLI and Terraform
+* Docker installed and running
+* Git branch: `rtito-aquaware`
+
+---
 
 ## Progress
 
-- [ ] _Task 1_
-- [ ] _Task 2_
+* [x] Created Node.js API with `/health` and `/api/hello` endpoints
+* [x] Built multi-stage Docker image
+* [x] Ran container locally and verified endpoints
+* [x] Implemented Docker healthcheck
+* [x] Created S3 bucket for Terraform state
+* [x] Enabled versioning on S3 bucket
+* [x] Reused existing DynamoDB table for state locking
+* [x] Configured Terraform backend (S3 + DynamoDB)
+* [x] Ran `terraform init` successfully
+
+---
 
 ## Notes and learnings
 
-- _Key concepts, useful commands, gotchas that came up._
+* Docker multi-stage builds help reduce image size and improve security
+* Healthchecks allow validating container status automatically
+* Terraform state should not be stored locally in team environments
+* S3 is used to store Terraform state remotely
+* DynamoDB is used for state locking to prevent concurrent modifications
+* Switching between Windows and WSL can cause line ending (CRLF/LF) issues in Git
+* AWS profiles help separate personal and organizational environments
+
+---
 
 ## Blockers
 
-- _What slowed things down and how it got unblocked (or what is still pending)._
+* AWS CLI initially using personal account instead of bootcamp account
+  → Fixed by configuring and exporting `AWS_PROFILE=bootcamp`
+
+* Git showing modified files due to CRLF/LF differences
+  → Resolved using `git restore` and proper Git configuration
+
+* DynamoDB table creation failed (`already exists`)
+  → Confirmed it can be reused safely
+
+---
 
 ## Deliverable
 
-- _What gets handed in at the end of the day (link, file, screenshot)._
+* Node.js API running locally and containerized
+* Docker image and container validated
+* Terraform backend configured with:
+
+  * S3 bucket (versioned)
+  * DynamoDB table for locking
+* `terraform init` completed successfully
+
+---
 
 ## Next steps
 
-- _What's left for the next day._
+* Define infrastructure resources using Terraform (e.g., VPC)
+* Run `terraform plan` and `apply`
+* Continue building infrastructure-as-code workflow
