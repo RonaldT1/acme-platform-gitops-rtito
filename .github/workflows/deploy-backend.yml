@@ -6,7 +6,7 @@ on:
     paths:
       - 'exercises/aws-bootcamp/app/**'
       - 'exercises/aws-bootcamp/docker/**'
-      - '.github/workflows/backend.yml'
+      - '.github/workflows/deploy-backend.yml'
 
 permissions:
   id-token: write
