@@ -5,8 +5,8 @@ on:
   push:
     branches: [rtito-aquaware]
     paths:
-      - 'exercises/aws-bootcamp/app/**'
-      - 'exercises/aws-bootcamp/docker/**'
+      - 'day-04/exercises/aws-bootcamp/app/**'
+      - 'day-04/exercises/aws-bootcamp/docker/**'
       - '.github/workflows/deploy-backend.yml'
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: exercises/aws-bootcamp
+        working-directory: day-04/exercises/aws-bootcamp
 
     steps:
       - uses: actions/checkout@v4
