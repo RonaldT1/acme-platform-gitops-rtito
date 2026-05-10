@@ -1,41 +1,23 @@
-const express = require('express');
-const { getParam } = require('./config');
-const app = express();
-const PORT = process.env.PORT || 3000;
+import { useEffect, useState } from 'react'
 
-let appConfig = {};
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-async function init() {
-  try {
-    appConfig.env = await getParam('/bootcamp/APP_ENV');
-    console.log(`Config loaded: env=${appConfig.env}`);
-  } catch (err) {
-    console.error('Failed to load config from SSM:', err.message);
-    process.exit(1); // fail fast
-  }
+function App() {
+  const [data, setData] = useState(null)
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/hello`)
+      .then(r => r.json())
+      .then(setData)
+      .catch(console.error)
+  }, [])
+
+  return (
+    <div style={{ fontFamily: 'sans-serif', padding: '2rem' }}>
+      <h1>Bootcamp App</h1>
+      <p>API: {data ? JSON.stringify(data) : 'Loading...'}</p>
+    </div>
+  )
 }
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    env: appConfig.env,
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
-app.get('/api/hello', (req, res) => {
-  res.json({
-    message: `Hello from ${appConfig.env}`,
-    version: process.env.APP_VERSION || 'unknown'
-  });
-});
-
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
-
-init().then(() => {
-  app.listen(PORT, () => console.log(`Server on port ${PORT}`));
-});
+export default App
