@@ -7,7 +7,7 @@ let appConfig = {};
 
 async function init() {
   try {
-    appConfig.env = await getParam('/bootcamp/INVALID_PARAM'); // this will throw an error
+    appConfig.env = await getParam('/bootcamp/APP_ENV');
     console.log(`Config loaded: env=${appConfig.env}`);
   } catch (err) {
     console.error('Failed to load config from SSM:', err.message);
