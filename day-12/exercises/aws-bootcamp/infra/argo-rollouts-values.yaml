@@ -1,0 +1,15 @@
+controller:
+  replicas: 2
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: argo-rollouts
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+dashboard:
+  enabled: true
+  service:
+    type: ClusterIP
