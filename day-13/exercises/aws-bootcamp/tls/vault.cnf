@@ -1,0 +1,16 @@
+[req]
+distinguished_name = dn
+req_extensions = v3_req
+prompt = no
+
+[dn]
+CN = vault.vault.svc.cluster.local
+
+[v3_req]
+subjectAltName = @alt
+
+[alt]
+DNS.1 = vault.vault.svc.cluster.local
+DNS.2 = vault.vault.svc
+DNS.3 = vault
+DNS.4 = *.vault-internal.vault.svc.cluster.local
