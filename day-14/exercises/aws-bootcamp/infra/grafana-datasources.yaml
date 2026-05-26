@@ -1,0 +1,33 @@
+grafana:
+  additionalDataSources:
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: http://tempo.observability.svc.cluster.local:3100
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: -1m
+          spanEndTimeShift: 1m
+          filterByTraceID: true
+        tracesToMetrics:
+          datasourceUid: prometheus
+          queries:
+            - name: "Request rate"
+              query: "sum(rate(http_server_duration_milliseconds_count{$$__tags}[1m]))"
+        nodeGraph: { enabled: true }
+
+    - name: Loki
+      type: loki
+      uid: loki
+      url: http://loki.observability.svc.cluster.local:3100
+      jsonData:
+        derivedFields:
+          - name: TraceID
+            matcherRegex: "trace_id=(\\w+)"
+            url: "$${__value.raw}"
+            datasourceUid: tempo
+
+  grafana.ini:
+    feature_toggles:
+      enable: traceqlEditor traceToMetrics

@@ -1,0 +1,91 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: node
+  namespace: observability
+spec:
+  mode: daemonset
+  image: otel/opentelemetry-collector-contrib:0.97.0
+  hostNetwork: false
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+  volumeMounts:
+    - name: varlogpods
+      mountPath: /var/log/pods
+      readOnly: true
+    - name: varlibdockercontainers
+      mountPath: /var/lib/docker/containers
+      readOnly: true
+
+  volumes:
+    - name: varlogpods
+      hostPath: { path: /var/log/pods }
+    - name: varlibdockercontainers
+      hostPath: { path: /var/lib/docker/containers }
+
+  config:
+    receivers:
+      filelog:
+        include:
+          - /var/log/pods/*/*/*.log
+        start_at: end
+        include_file_path: true
+        operators:
+          - type: regex_parser
+            id: cri-parser
+            regex: '^(?P<time>[^ ]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$'
+            timestamp:
+              parse_from: attributes.time
+              layout_type: gotime
+              layout: '2006-01-02T15:04:05.999999999Z07:00'
+          - type: move
+            from: attributes.log
+            to: body
+          - type: remove
+            field: attributes.time
+          - type: remove
+            field: attributes.logtag
+          - type: remove
+            field: attributes.stream
+
+      kubeletstats:
+        collection_interval: 30s
+        auth_type: serviceAccount
+        endpoint: ${env:K8S_NODE_NAME}:10250
+        insecure_skip_verify: true
+        metric_groups: [node, pod, container]
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 80
+
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+
+    exporters:
+      otlp/gateway:
+        endpoint: gateway-collector.observability.svc.cluster.local:4317
+        tls: { insecure: true }
+
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8889
+      pipelines:
+        logs:
+          receivers:  [filelog]
+          processors: [memory_limiter, batch]
+          exporters:  [otlp/gateway]
+
+        metrics:
+          receivers:  [kubeletstats]
+          processors: [memory_limiter, batch]
+          exporters:  [otlp/gateway]
+
+  env:
+    - name: K8S_NODE_NAME
+      valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
