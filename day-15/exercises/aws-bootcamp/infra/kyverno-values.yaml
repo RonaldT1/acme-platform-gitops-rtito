@@ -1,0 +1,34 @@
+admissionController:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+
+backgroundController:
+  replicas: 2
+
+reportsController:
+  replicas: 1
+
+cleanupController:
+  replicas: 2
+
+config:
+  webhooks:
+    - namespaceSelector:
+        matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: NotIn
+            values:
+              - kube-system
+              - kyverno
+  excludeGroups:
+    - system:nodes
+    - system:serviceaccounts:kube-system

@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: bootcamp-api-canary-health
+  namespace: bootcamp
+spec:
+  args:
+    - name: service-name
+      value: bootcamp-api-canary
+    - name: namespace
+      value: bootcamp
+  metrics:
+    - name: http-5xx-rate
+      interval: 30s
+      count: 5
+      successCondition: result[0] < 0.01     # under 1% error rate
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(
+              http_requests_total{
+                namespace="{{`{{args.namespace}}`}}"
+                service="{{`{{args.service-name}}`}}"
+                status=~"5.."
+              }[1m]
+            ))
+            /
+            sum(rate(
+              http_requests_total{
+                namespace="{{`{{args.namespace}}`}}"
+                service="{{`{{args.service-name}}`}}"
+              }[1m]
+            ))
+    - name: p95-latency-ms
+      interval: 30s
+      count: 5
+      successCondition: result[0] < 400      # p95 under 400ms
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(
+                http_request_duration_seconds_bucket{
+                  namespace="{{`{{args.namespace}}`}}"
+                  service="{{`{{args.service-name}}`}}"
+                }[1m]
+              )) by (le)
+            ) * 1000

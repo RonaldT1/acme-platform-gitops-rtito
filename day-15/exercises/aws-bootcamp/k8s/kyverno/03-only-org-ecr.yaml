@@ -1,0 +1,20 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: only-org-ecr
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: image-registry-must-be-org-ecr
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Images must come from 711387135481.dkr.ecr.us-east-1.amazonaws.com/*"
+        pattern:
+          spec:
+            containers:
+              - image: "711387135481.dkr.ecr.us-east-1.amazonaws.com/*"

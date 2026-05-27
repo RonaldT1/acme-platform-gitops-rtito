@@ -1,0 +1,27 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-namespace-owner
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: namespace-must-have-owner-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      exclude:
+        any:
+          - resources:
+              names:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: "Every namespace must carry an 'owner' label."
+        pattern:
+          metadata:
+            labels:
+              owner: "?*"

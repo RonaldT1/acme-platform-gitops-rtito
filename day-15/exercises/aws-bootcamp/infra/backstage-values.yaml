@@ -1,0 +1,107 @@
+backstage:
+  image:
+    registry: ghcr.io
+    repository: backstage/backstage
+    tag: "1.45.2"
+
+  replicas: 2
+
+  appConfig:
+    app:
+      title: Aquaware Bootcamp Portal
+      baseUrl: https://backstage.bootcamp.internal
+
+    backend:
+      baseUrl: https://backstage.bootcamp.internal
+      cors:
+        origin: https://backstage.bootcamp.internal
+      database:
+        client: pg
+        connection:
+          host: backstage-postgresql
+          port: 5432
+          user: backstage
+          password: ${POSTGRES_PASSWORD}
+
+    auth:
+      environment: development
+      providers:
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
+        github:
+          development:
+            clientId: ${GH_CLIENT_ID}
+            clientSecret: ${GH_CLIENT_SECRET}
+
+    integrations:
+      github:
+        - host: github.com
+          token: ${GH_TOKEN}
+
+    catalog:
+      rules:
+        - allow:
+            - Component
+            - System
+            - API
+            - Resource
+            - Location
+            - Group
+            - User
+      locations:
+        - type: url
+          target: https://github.com/RonaldT1/ronald-bootcamp-gitops/blob/main/catalog-info.yaml
+
+    techdocs:
+      builder: local
+      generator:
+        runIn: local
+      publisher:
+        type: local
+
+    kubernetes:
+      serviceLocatorMethod:
+        type: multiTenant
+      clusterLocatorMethods:
+        - type: config
+          clusters:
+            - name: bootcamp-rtito-day15-eks
+              url: https://kubernetes.default.svc
+              authProvider: serviceAccount
+              skipTLSVerify: false
+              skipMetricsLookup: false
+              caData: ${K8S_CA_DATA}
+              serviceAccountToken: ${K8S_SA_TOKEN}
+
+    argocd:
+      baseUrl: https://argocd.bootcamp.internal
+      username: backstage
+      password: ${ARGOCD_PASSWORD}
+      appLocatorMethods:
+        - type: config
+          instances:
+            - name: bootcamp
+              url: https://argocd.bootcamp.internal
+              token: ${ARGOCD_TOKEN}
+
+  extraEnvVarsSecrets:
+    - backstage-secrets
+
+postgresql:
+  enabled: true
+  auth:
+    existingSecret: backstage-postgres
+    username: backstage
+    database: backstage
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+  host: backstage.bootcamp.internal

@@ -1,0 +1,54 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: bootcamp-api
+  description: Bootcamp 2026 demo API
+  annotations:
+    github.com/project-slug: RonaldT1/ronald-bootcamp-gitops
+    backstage.io/kubernetes-id: bootcamp-api
+    backstage.io/kubernetes-namespace: bootcamp
+    backstage.io/kubernetes-label-selector: "app.kubernetes.io/name=bootcamp-api"
+    argocd/app-name: bootcamp-api
+    grafana/dashboard-selector: "service=bootcamp-api"
+    prometheus.io/rule: "ServiceLevelObjective"
+  tags:
+    - nodejs
+    - api
+    - bootcamp
+  links:
+    - title: GitOps Repo
+      url: https://github.com/RonaldT1/ronald-bootcamp-gitops
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+  system: bootcamp
+  providesApis:
+    - bootcamp-api-rest
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: bootcamp
+spec:
+  owner: team-platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: bootcamp-api-rest
+spec:
+  type: openapi
+  lifecycle: production
+  owner: team-platform
+  system: bootcamp
+  definition:
+    $text: ./openapi.yaml
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-platform
+spec:
+  type: team
+  children: []

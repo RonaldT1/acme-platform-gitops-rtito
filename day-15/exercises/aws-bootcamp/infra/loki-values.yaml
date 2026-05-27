@@ -1,0 +1,50 @@
+deploymentMode: SingleBinary
+
+backend:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: gp3
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits:   { cpu: "2",  memory: 4Gi }
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index: { prefix: index_, period: 24h }
+  limits_config:
+    allow_structured_metadata: true
+    retention_period: 168h
+    max_query_lookback: 168h
+
+chunksCache:
+  enabled: false
+
+resultsCache:
+  enabled: false
+
+gateway:
+  enabled: false
+
+test:
+  enabled: false
