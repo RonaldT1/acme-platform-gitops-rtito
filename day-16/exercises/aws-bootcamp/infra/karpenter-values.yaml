@@ -1,0 +1,25 @@
+serviceAccount:
+  name: karpenter
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::711387135481:role/bootcamp-rtito-day16-karpenter-controller
+
+settings:
+  clusterName: bootcamp-rtito-day16-eks
+  interruptionQueue: bootcamp-rtito-day16-karpenter-interruption
+  featureGates:
+    drift: true
+    spotToSpotConsolidation: true
+
+replicas: 2
+controller:
+  resources:
+    requests: { cpu: 200m, memory: 512Mi }
+    limits:   { cpu: "1",  memory: 1Gi }
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: karpenter
