@@ -1,0 +1,151 @@
+name: Build, Sign, and Attest bootcamp-api
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [rtito-aquaware]
+    paths:
+      - "day-18/exercises/aws-bootcamp/app/**"
+      - "day-18/exercises/aws-bootcamp/docker/**"
+      - ".github/workflows/build-sign-attest.yml"
+
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+  attestations: write
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: bootcamp-api
+  APP_DIR: day-18/exercises/aws-bootcamp
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      digest: ${{ steps.push.outputs.digest }}
+      registry: ${{ steps.ecr-login.outputs.registry }}
+      ecr_password: ${{ steps.ecr-password.outputs.password }}
+    defaults:
+      run:
+        working-directory: day-18/exercises/aws-bootcamp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Capture ECR password for provenance job
+        id: ecr-password
+        run: |
+          ECR_PASSWORD=$(aws ecr get-login-password --region "$AWS_REGION")
+          echo "::add-mask::$ECR_PASSWORD"
+          echo "password=$ECR_PASSWORD" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: day-18/exercises/aws-bootcamp
+          file: day-18/exercises/aws-bootcamp/docker/Dockerfile
+          push: true
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
+          provenance: false
+          sbom: false
+
+      - name: Export image ref
+        id: meta
+        run: echo "image=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Install syft 1.44.0
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+            | sh -s -- -b /usr/local/bin v1.44.0
+          syft version
+
+      - name: Generate CycloneDX and SPDX SBOMs
+        run: |
+          syft "${{ steps.meta.outputs.image }}@${{ steps.push.outputs.digest }}" \
+            -o cyclonedx-json=sbom.cdx.json \
+            -o spdx-json=sbom.spdx.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            day-18/exercises/aws-bootcamp/sbom.cdx.json
+            day-18/exercises/aws-bootcamp/sbom.spdx.json
+
+      - name: Install trivy 0.71.0
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin v0.71.0
+          trivy --version
+
+      - name: Trivy scan (CRITICAL gate)
+        run: |
+          trivy image \
+            --severity CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1 \
+            --format sarif \
+            --output trivy.sarif \
+            "${{ steps.meta.outputs.image }}@${{ steps.push.outputs.digest }}"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy
+          path: day-18/exercises/aws-bootcamp/trivy.sarif
+
+      - name: Install cosign 2.6.3
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: v2.6.3
+
+      - name: Cosign sign image (keyless)
+        run: |
+          cosign sign --yes \
+            --oidc-issuer https://token.actions.githubusercontent.com \
+            "${{ steps.meta.outputs.image }}@${{ steps.push.outputs.digest }}"
+
+      - name: Cosign attest CycloneDX SBOM
+        run: |
+          cosign attest --yes \
+            --predicate sbom.cdx.json \
+            --type cyclonedx \
+            "${{ steps.meta.outputs.image }}@${{ steps.push.outputs.digest }}"
+
+      - name: Cosign attest Trivy report
+        run: |
+          cosign attest --yes \
+            --predicate trivy.sarif \
+            --type vuln \
+            "${{ steps.meta.outputs.image }}@${{ steps.push.outputs.digest }}"
+
+  provenance:
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+      actions: read
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
+    with:
+      image: ${{ needs.build.outputs.image }}
+      digest: ${{ needs.build.outputs.digest }}
+      registry-username: AWS
+    secrets:
+      registry-password: ${{ needs.build.outputs.ecr_password }}

@@ -1,0 +1,83 @@
+cni:
+  chainingMode: aws-cni
+  exclusive: false
+
+enableIPv4Masquerade: false
+
+endpointRoutes:
+  enabled: true
+
+routingMode: native
+tunnelProtocol: ""
+
+bpf:
+  masquerade: false
+
+kubeProxyReplacement: false
+
+nodePort:
+  enabled: true
+
+externalIPs:
+  enabled: true
+
+# Set by helm install flags after the cluster exists.
+k8sServiceHost: 0.0.0.0
+k8sServicePort: 443
+
+image:
+  repository: quay.io/cilium/cilium
+  tag: v1.19.4
+  pullPolicy: IfNotPresent
+
+operator:
+  image:
+    repository: quay.io/cilium/operator
+    tag: v1.19.4
+  replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+    image:
+      repository: quay.io/cilium/hubble-relay
+      tag: v1.19.4
+  ui:
+    enabled: true
+    image:
+      repository: quay.io/cilium/hubble-ui
+      tag: v0.13.5
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - http
+  tls:
+    auto:
+      enabled: true
+      method: cronJob
+      certValidityDuration: 365
+
+l7Proxy: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+prometheus:
+  enabled: true

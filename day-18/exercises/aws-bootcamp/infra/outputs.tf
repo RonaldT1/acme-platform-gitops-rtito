@@ -1,0 +1,6 @@
+output "vpc_id" { value = aws_vpc.main.id }
+output "public_subnet_ids" { value = aws_subnet.public[*].id }
+output "private_subnet_ids" { value = aws_subnet.private[*].id }
+output "ecr_url" { value = aws_ecr_repository.app.repository_url }
+output "cluster_name" { value = local.cluster_name }
+output "github_actions_role_arn" { value = aws_iam_role.github_actions.arn }

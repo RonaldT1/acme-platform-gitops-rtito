@@ -1,0 +1,35 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2
+
+  amiSelectorTerms:
+    - alias: al2@latest
+
+  role: bootcamp-rtito-day18-karpenter-node
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: bootcamp-rtito-day18-eks
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: bootcamp-rtito-day18-eks
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 50Gi
+        volumeType: gp3
+        encrypted: true
+        deleteOnTermination: true
+  metadataOptions:
+    httpPutResponseHopLimit: 2
+    httpTokens: required
+  tags:
+    Project: bootcamp-rtito-day18
+    Owner: rtito
+    Environment: dev
+    Service: bootcamp
+    CostCenter: bootcamp
+    ManagedBy: terraform
+    LabDay: day-18

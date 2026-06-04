@@ -1,0 +1,25 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: api-allow-frontend
+  namespace: bootcamp-prod
+spec:
+  targetRefs:
+    - kind: Service
+      group: ""
+      name: bootcamp-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/bootcamp-excess-media/sa/frontend
+              - cluster.local/ns/bootcamp-prod/sa/load-tester
+      to:
+        - operation:
+            methods:
+              - GET
+              - POST
+            paths:
+              - /api/*
+              - /healthz

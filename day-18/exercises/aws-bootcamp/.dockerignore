@@ -1,0 +1,5 @@
+infra/
+k8s/
+app/node_modules/
+app/npm-debug.log
+app/.npmrc

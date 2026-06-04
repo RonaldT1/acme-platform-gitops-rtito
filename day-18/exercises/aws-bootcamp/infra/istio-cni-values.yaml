@@ -1,0 +1,13 @@
+profile: ambient
+cni:
+  ambient:
+    enabled: true
+  chained: true
+  cniBinDir: /opt/cni/bin
+  cniConfDir: /etc/cni/net.d
+  excludeNamespaces:
+    - kube-system
+    - istio-system
+global:
+  hub: docker.io/istio
+  tag: 1.30.0
