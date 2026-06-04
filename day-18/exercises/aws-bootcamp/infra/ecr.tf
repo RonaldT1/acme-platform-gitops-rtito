@@ -1,6 +1,6 @@
 resource "aws_ecr_repository" "app" {
   name                 = "bootcamp-api"
-  image_tag_mutability = "IMMUTABLE"
+  image_tag_mutability = "MUTABLE"
 
   force_delete = true
 
