@@ -149,4 +149,4 @@ jobs:
       registry-username: AWS
       private-repository: true
     secrets:
-      registry-password: ${{ needs.build.outputs.ecr_password }}
+      registry-password: ${{ secrets.ECR_PASSWORD_FROM_OIDC_HELPER }}
