@@ -147,5 +147,6 @@ jobs:
       image: ${{ needs.build.outputs.image }}
       digest: ${{ needs.build.outputs.digest }}
       registry-username: AWS
+      private-repository: true
     secrets:
       registry-password: ${{ needs.build.outputs.ecr_password }}
