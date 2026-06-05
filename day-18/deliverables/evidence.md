@@ -1,61 +1,54 @@
-# Day-17
+# Day-18
 
-## Platform Health
+## Terraform Outputs
 
-- `kubectl -n kube-system get ds aws-node` showed `4/4` ready
-- `kubectl -n kube-system get ds cilium` showed `4/4` ready
-- `kubectl -n kube-system get deploy cilium-operator hubble-relay hubble-ui` showed all ready
-- `kubectl get nodepool` showed `general=True` and `gpu=True`
-- `kubectl get ec2nodeclass` showed `default=True`
+- `cluster_name = bootcamp-rtito-day18-eks`
+- `ecr_url = 711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api`
+- `github_actions_role_arn = arn:aws:iam::711387135481:role/bootcamp-rtito-day18-github-actions-role`
 
-## Istio Ambient Health
+## Signing And Attestation Evidence
 
-- `kubectl -n istio-system get ds ztunnel istio-cni-node`
-  - `ztunnel 4/4`
-  - `istio-cni-node 4/4`
-- `kubectl -n istio-system get deploy istiod`
-  - `istiod 2/2`
-- `kubectl get ns bootcamp-prod -L istio.io/dataplane-mode,istio.io/use-waypoint`
-  - `bootcamp-prod ambient bootcamp-prod-waypoint`
-- `kubectl -n bootcamp-prod get gateway bootcamp-prod-waypoint`
-  - `PROGRAMMED=True`
+- `cosign verify` succeeded for:
+  - `711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:56e4631b3535d090fc2dfd6d8a3d8888bd281d14`
+- Verified digest:
+  - `sha256:50f87354561ad61993f22b86c653421b289c62784d574354cef0384d1392ed02`
+- Verified workflow identity:
+  - repository: `amartinez-aquaware/bootcamp-2026-4`
+  - workflow: `build-sign-attest.yml`
+  - ref: `refs/heads/rtito-aquaware`
+  - issuer: `https://token.actions.githubusercontent.com`
+- `cosign verify-attestation --type cyclonedx` succeeded
+- `cosign verify-attestation --type vuln` succeeded
+- `rekor-cli search --sha ...` returned matching entries
 
-## Application And Security
+## Kyverno Enforcement Evidence
 
-- `kubectl -n bootcamp-prod get pods,svc,peerauthentication,authorizationpolicy,destinationrule,virtualservice`
-  - `bootcamp-api-v1` running
-  - `bootcamp-api-v2` running
-  - `bootcamp-prod-waypoint` running
-  - service `bootcamp-api` on `3000/TCP`
-  - `PeerAuthentication/default` mode `STRICT`
-  - `AuthorizationPolicy/api-allow-frontend` present
-  - `DestinationRule/bootcamp-api` present
-  - `VirtualService/bootcamp-api` present
+- `kubectl get clusterpolicy`
+  - `verify-bootcamp-api-signatures   ADMISSION=true   READY=True`
+- Signed image test:
+  - `kubectl apply -f test-signed-image.yaml`
+  - `pod/signed-image-test created`
+  - `kubectl get pod signed-image-test`
+  - `1/1 Running`
+- Unsigned image test:
+  - a real image was built manually and pushed to ECR as `unsigned-test`
+  - `kubectl apply -f test-unsigned-image.yaml`
+  - request denied by Kyverno
+  - failure reason: `no signatures found`
 
-## Traffic Validation
+## SBOM Evidence
 
-- In-mesh traffic split from `load-tester`:
-  - run 1: `v1=86  v2=14  slow_2s=0`
-  - run 2: `v1=93  v2=7  slow_2s=0`
-- Non-mesh client rejection from namespace `no-mesh`:
-  - HTTP code `000`
-  - `exit_code=56`
+- `cosign download attestation $IMAGE | jq ... '.predicate.components | length'`
+  - output included `648`
+- This confirmed that the image SBOM contained a real component inventory well above the lab threshold of `> 100`.
 
-## Fault Injection Evidence
+## Real Problems And Workarounds
 
-Waypoint logs confirmed delay injection with `DI` and ~2-second durations, for example:
-
-- `200 DI ... 2005`
-- `200 DI ... 1997`
-- `200 DI ... 2001`
-- `200 DI ... 2009`
-
-This is the accepted proof that the `VirtualService` delay rule was active even though the shell counter `slow_2s` did not increment.
-
-## Blockers And Workarounds
-
-- Gateway API `standard-install.yaml` and `experimental-install.yaml` both failed to create `tlsroutes.gateway.networking.k8s.io` because the cluster rejected the `isIP` CEL validation.
-- Istio installation still proceeded because the lab used waypoint/Gateway API resources and did not depend on `TLSRoute`.
-- `ztunnel` initially failed readiness with `Unauthenticated` until `global.multiCluster.clusterName: bootcamp-eks` was added to `istiod-values.yaml`.
-- `istioctl` was not installed locally, so waypoint creation used a manual `Gateway` plus namespace label.
-- `hubble observe` and `istioctl ztunnel-config workload` were not captured because the required CLIs were not available locally.
+- Cosign attestations initially conflicted with ECR immutable tagging semantics.
+  - Workaround: changed the repository to `MUTABLE`.
+- The SLSA provenance workflow for a private repo required explicit private-repository handling and a stable ECR credential secret.
+- Kyverno initially rejected the policy because the keyless attestor was missing an explicit Rekor URL.
+- Kyverno initially failed against private ECR with `401 Unauthorized`.
+  - Workaround: created `kyverno-ecr-creds` in namespace `kyverno` and referenced it from the policy.
+- The first unsigned-image test used a missing tag and failed with `MANIFEST_UNKNOWN`.
+  - Workaround: pushed a real unsigned image `unsigned-test` and repeated the test.

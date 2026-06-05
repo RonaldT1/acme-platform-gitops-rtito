@@ -1,40 +1,39 @@
-# Day-17
+# Day-18
 
 ## High-Level Steps
 
-1. Renamed the inherited `day16` baseline to `day17` across Terraform and Kubernetes manifests.
-2. Recreated the AWS baseline with Terraform using the new `day17` state and naming.
-3. Rebuilt and pushed the application image as:
-   - `bootcamp-rtito-day17-api:v1`
-   - `bootcamp-rtito-day17-api:v2`
-4. Restored the Day 16 platform baseline:
-   - AWS Load Balancer Controller
-   - Karpenter
-   - Cilium chained mode
-   - Hubble
-5. Updated the application to expose `/api/version` while keeping port `3000`.
-6. Installed Istio `1.30.0` with Helm:
-   - `istio-base`
-   - `istiod`
-   - `istio-cni`
-   - `ztunnel`
-7. Fixed the initial `ztunnel` authentication failure by aligning Istio `clusterName` to `bootcamp-eks` in both control plane and dataplane values.
-8. Enabled Ambient mode on namespace `bootcamp-prod`.
-9. Created a waypoint with Gateway API resources because `istioctl` was not installed locally.
-10. Deployed `bootcamp-api` `v1` and `v2` in `bootcamp-prod`.
-11. Applied:
-   - `PeerAuthentication` STRICT
-   - `AuthorizationPolicy`
-   - `DestinationRule`
-   - `VirtualService`
-12. Validated:
-   - `STRICT` mTLS blocks `no-mesh`
-   - weighted routing reaches both `v1` and `v2`
-   - fault injection adds ~2 seconds to some requests
+1. Rebased the inherited environment to `day-18` across Terraform, Kubernetes manifests, and image references.
+2. Recreated the AWS baseline with Terraform:
+   - EKS `bootcamp-rtito-day18-eks`
+   - ECR `bootcamp-api`
+   - OIDC-backed GitHub Actions role for ECR access
+3. Adapted the GitHub Actions workflow to the monorepo layout and private ECR repository.
+4. Built and pushed the application image from GitHub Actions.
+5. Signed the image keylessly with Cosign through GitHub Actions OIDC.
+6. Published:
+   - CycloneDX SBOM attestation
+   - vulnerability attestation
+   - SLSA provenance
+7. Verified locally:
+   - Cosign signature identity
+   - CycloneDX attestation
+   - vulnerability attestation
+   - Rekor entries
+   - image digest
+8. Installed Kyverno in the cluster.
+9. Created a `ClusterPolicy` to require keyless signatures for:
+   - `711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:*`
+10. Added ECR credentials for Kyverno so it could validate images from the private registry.
+11. Validated admission control:
+   - signed image admitted
+   - unsigned image denied with `no signatures found`
+12. Confirmed the SBOM evidence contained a real component inventory:
+   - `648` components
 
 ## Real Blockers
 
-- Gateway API `v1.5.1` failed to create `TLSRoute` in this environment because the cluster rejected the `isIP` CEL validation.
-- `ztunnel` initially stayed `0/1` because it claimed cluster `bootcamp-eks` while `istiod` still knew the local cluster as `Kubernetes`.
-- `istioctl` was missing locally, so the waypoint had to be created manually with `kubectl`.
-- `slow_2s` from the shell validation script did not reflect the injected delay, so the final proof came from waypoint logs.
+- ECR was initially immutable, which broke repeated OCI attestation pushes from Cosign.
+- The SLSA reusable workflow needed explicit handling for a private repository and stable ECR credentials.
+- Kyverno initially rejected the keyless policy because `rekor.url` was missing.
+- Kyverno initially failed to verify images in the private ECR repo with `401 Unauthorized`.
+- The first unsigned-image test used a tag that did not exist, which only proved `MANIFEST_UNKNOWN` and not missing signatures.

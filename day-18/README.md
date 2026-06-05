@@ -1,43 +1,47 @@
-# Day-17
+# Day-18
 
 ## Overview
 
-Day 17 completed Istio Ambient mode on top of the rebuilt Day 16 baseline:
+Day 18 completed the supply chain security lab on top of the rebuilt AWS baseline:
 
-- EKS `bootcamp-rtito-day17-eks`
-- Cilium `1.19.4` in chained mode with AWS VPC CNI
-- Istio `1.30.0` installed by Helm
-- namespace `bootcamp-prod` enrolled in Ambient mode
-- waypoint proxy enabled for L7 routing
-- `PeerAuthentication` STRICT mTLS
-- `bootcamp-api` deployed as `v1` and `v2`
-- weighted traffic split `90/10`
-- 2-second fault injection on a subset of requests
+- EKS `bootcamp-rtito-day18-eks`
+- ECR `711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api`
+- GitHub Actions OIDC role for keyless signing
+- Cosign signature verification against GitHub Actions identity
+- CycloneDX SBOM attestation
+- Vulnerability attestation
+- Rekor transparency log evidence
+- Kyverno admission policy enforcing signed images from the private ECR repo
 
 ## Outcome
 
 The lab worked end to end with these verified results:
 
-- `ztunnel`, `istio-cni-node`, and `istiod` healthy
-- `bootcamp-prod` labeled with `istio.io/dataplane-mode=ambient`
-- waypoint `bootcamp-prod-waypoint` programmed successfully
-- `PeerAuthentication` mode `STRICT`
-- traffic split observed from in-mesh client:
-  - first run: `v1=86  v2=14`
-  - second run: `v1=93  v2=7`
-- non-mesh client rejected:
-  - HTTP code `000`
-  - curl exit code `56`
-- fault injection confirmed from waypoint logs with `DI` and latencies around `1996-2009 ms`
+- GitHub Actions built, signed, and attested `bootcamp-api`
+- `cosign verify` matched the expected GitHub workflow identity
+- `cosign verify-attestation --type cyclonedx` succeeded
+- `cosign verify-attestation --type vuln` succeeded
+- `rekor-cli search --sha ...` returned matching transparency log entries
+- Kyverno `ClusterPolicy` became `Ready=True`
+- a signed image Pod was admitted and ran successfully
+- a manually pushed unsigned image was blocked with `no signatures found`
+- the downloaded SBOM evidence showed a real component count of `648`
 
-## Important Notes
+## Real Problems And Fixes
 
-- The `slow_2s` counter from the shell script stayed at `0`, but the waypoint logs proved that delay injection was active.
-- `istioctl` was not available locally, so waypoint enrollment was done with Gateway API resources and labels instead.
-- `hubble observe` was not captured because the local Hubble CLI was not verified as available.
+- ECR was initially `IMMUTABLE`, which broke Cosign attestations because the same OCI attestation tag had to be updated more than once.
+  Fix: changed the ECR repository to `MUTABLE`.
+- The SLSA reusable workflow did not work cleanly with the transient ECR login output when the repository was private.
+  Fix: used the private-repository setting and a dedicated GitHub secret for the ECR password generated from the correct AWS account.
+- Kyverno rejected the initial keyless policy because it required an explicit Rekor URL.
+  Fix: added `rekor.url: https://rekor.sigstore.dev`.
+- Kyverno could not verify images from the private ECR repository at first because it had no registry credentials.
+  Fix: created an ECR pull secret in namespace `kyverno` and referenced it from `imageRegistryCredentials`.
+- The first negative Kyverno test used a non-existent tag and failed for `MANIFEST_UNKNOWN`, which was not strong enough as unsigned-image evidence.
+  Fix: manually built and pushed a real `unsigned-test` image to ECR without Cosign signatures, then retried the admission test.
 
 ## References
 
-- Steps: [CAPSTONE-STEPS.md](/home/ronald/projects/bootcamp-2026-4/day-17/CAPSTONE-STEPS.md)
-- Evidence: [evidence.md](/home/ronald/projects/bootcamp-2026-4/day-17/deliverables/evidence.md)
-- Commands: [commands.md](/home/ronald/projects/bootcamp-2026-4/day-17/notes/commands.md)
+- Steps: [CAPSTONE-STEPS.md](/home/ronald/projects/bootcamp-2026-4/day-18/CAPSTONE-STEPS.md)
+- Evidence: [evidence.md](/home/ronald/projects/bootcamp-2026-4/day-18/deliverables/evidence.md)
+- Commands: [commands.md](/home/ronald/projects/bootcamp-2026-4/day-18/notes/commands.md)
