@@ -1,0 +1,10 @@
+mounts:
+  volumes:
+    - name: bootcamp-custom-rules
+      configMap:
+        name: falco-custom-rules
+  volumeMounts:
+    - name: bootcamp-custom-rules
+      mountPath: /etc/falco/rules.d/bootcamp-shell.yaml
+      subPath: bootcamp-shell.yaml
+      readOnly: true

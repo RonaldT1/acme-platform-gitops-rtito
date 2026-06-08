@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: signed-image-test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: app
+      image: 711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:56e4631b3535d090fc2dfd6d8a3d8888bd281d14

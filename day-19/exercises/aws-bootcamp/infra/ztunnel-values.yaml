@@ -1,0 +1,13 @@
+hub: docker.io/istio
+tag: 1.30.0
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "2"
+    memory: 1Gi
+env:
+  RUST_LOG: info
+multiCluster:
+  clusterName: bootcamp-eks

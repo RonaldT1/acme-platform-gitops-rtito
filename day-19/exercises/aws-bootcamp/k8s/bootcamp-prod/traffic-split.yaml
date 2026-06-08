@@ -1,0 +1,39 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: bootcamp-api
+  namespace: bootcamp-prod
+spec:
+  host: bootcamp-api.bootcamp-prod.svc.cluster.local
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: bootcamp-api
+  namespace: bootcamp-prod
+spec:
+  hosts:
+    - bootcamp-api.bootcamp-prod.svc.cluster.local
+  http:
+    - name: canary-split
+      fault:
+        delay:
+          percentage:
+            value: 10.0
+          fixedDelay: 2s
+      route:
+        - destination:
+            host: bootcamp-api.bootcamp-prod.svc.cluster.local
+            subset: v1
+          weight: 90
+        - destination:
+            host: bootcamp-api.bootcamp-prod.svc.cluster.local
+            subset: v2
+          weight: 10
