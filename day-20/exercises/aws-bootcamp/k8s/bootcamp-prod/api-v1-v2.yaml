@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bootcamp-api
+  namespace: bootcamp-prod
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bootcamp-api-v1
+  namespace: bootcamp-prod
+  labels:
+    app: bootcamp-api
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bootcamp-api
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: bootcamp-api
+        version: v1
+    spec:
+      serviceAccountName: bootcamp-api
+      containers:
+        - name: api
+          image: 711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          env:
+            - name: API_VERSION
+              value: v1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bootcamp-api-v2
+  namespace: bootcamp-prod
+  labels:
+    app: bootcamp-api
+    version: v2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bootcamp-api
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: bootcamp-api
+        version: v2
+    spec:
+      serviceAccountName: bootcamp-api
+      containers:
+        - name: api
+          image: 711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:v2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          env:
+            - name: API_VERSION
+              value: v2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bootcamp-api
+  namespace: bootcamp-prod
+  labels:
+    app: bootcamp-api
+spec:
+  selector:
+    app: bootcamp-api
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      appProtocol: http

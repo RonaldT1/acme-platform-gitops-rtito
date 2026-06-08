@@ -5,8 +5,8 @@ on:
   push:
     branches: [rtito-aquaware]
     paths:
-      - "day-18/exercises/aws-bootcamp/app/**"
-      - "day-18/exercises/aws-bootcamp/docker/**"
+      - "day-20/exercises/aws-bootcamp/app/**"
+      - "day-20/exercises/aws-bootcamp/docker/**"
       - ".github/workflows/build-sign-attest.yml"
 
 permissions:
@@ -18,7 +18,7 @@ permissions:
 env:
   AWS_REGION: us-east-1
   ECR_REPO: bootcamp-api
-  APP_DIR: day-18/exercises/aws-bootcamp
+  APP_DIR: day-20/exercises/aws-bootcamp
 
 jobs:
   build:
@@ -30,7 +30,7 @@ jobs:
       ecr_password: ${{ steps.ecr-password.outputs.password }}
     defaults:
       run:
-        working-directory: day-18/exercises/aws-bootcamp
+        working-directory: day-20/exercises/aws-bootcamp
     steps:
       - uses: actions/checkout@v4
 
@@ -58,8 +58,8 @@ jobs:
         id: push
         uses: docker/build-push-action@v7
         with:
-          context: day-18/exercises/aws-bootcamp
-          file: day-18/exercises/aws-bootcamp/docker/Dockerfile
+          context: day-20/exercises/aws-bootcamp
+          file: day-20/exercises/aws-bootcamp/docker/Dockerfile
           push: true
           tags: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
           provenance: false
@@ -85,8 +85,8 @@ jobs:
         with:
           name: sbom
           path: |
-            day-18/exercises/aws-bootcamp/sbom.cdx.json
-            day-18/exercises/aws-bootcamp/sbom.spdx.json
+            day-20/exercises/aws-bootcamp/sbom.cdx.json
+            day-20/exercises/aws-bootcamp/sbom.spdx.json
 
       - name: Install trivy 0.71.0
         run: |
@@ -108,7 +108,7 @@ jobs:
         if: always()
         with:
           name: trivy
-          path: day-18/exercises/aws-bootcamp/trivy.sarif
+          path: day-20/exercises/aws-bootcamp/trivy.sarif
 
       - name: Install cosign 2.6.3
         uses: sigstore/cosign-installer@v4.1.2

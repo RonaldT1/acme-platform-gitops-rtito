@@ -1,0 +1,33 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: prod-zt
+spec:
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: api-frontend-only
+  namespace: prod-zt
+spec:
+  targetRefs:
+    - kind: Service
+      group: ""
+      name: bootcamp-api
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/prod-zt/sa/frontend
+      to:
+        - operation:
+            methods:
+              - GET
+              - POST
+            paths:
+              - /api/*
+              - /healthz

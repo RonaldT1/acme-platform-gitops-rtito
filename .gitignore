@@ -34,3 +34,7 @@ temp/
 *.tfstate
 *.tfstate.*
 crash.log
+
+# Day 20 lab outputs
+day-20/artifacts/
+day-20/exercises/aws-bootcamp/infra/*.tfplan

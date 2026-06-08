@@ -1,0 +1,30 @@
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicyNamespaced
+metadata:
+  name: block-shell-exec
+  namespace: bootcamp-prod
+spec:
+  kprobes:
+    - call: "security_bprm_check"
+      syscall: false
+      args:
+        - index: 0
+          type: "linux_binprm"
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: "Equal"
+              values:
+                - "/bin/sh"
+                - "/bin/bash"
+                - "/usr/bin/sh"
+                - "/usr/bin/bash"
+                - "/bin/dash"
+                - "/bin/ash"
+                - "/bin/busybox"
+                - "/usr/bin/busybox"
+          matchActions:
+            - action: Sigkill
+            - action: Post
+              kernelStackTrace: true
+              userStackTrace: true

@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-bootcamp-api-signatures
+  annotations:
+    policies.kyverno.io/title: Verify bootcamp-api signatures
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Require images from the bootcamp-api ECR repository to be signed by the
+      GitHub Actions workflow used in day-18.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-bootcamp-api-keyless-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:*"
+          imageRegistryCredentials:
+            secrets:
+              - kyverno-ecr-creds
+          mutateDigest: true
+          required: true
+          verifyDigest: true
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    issuer: https://token.actions.githubusercontent.com
+                    subject: https://github.com/amartinez-aquaware/bootcamp-2026-4/.github/workflows/build-sign-attest.yml@refs/heads/rtito-aquaware
+                    rekor:
+                      url: https://rekor.sigstore.dev

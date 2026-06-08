@@ -1,0 +1,27 @@
+tetragon:
+  image:
+    repository: quay.io/cilium/tetragon
+    tag: v1.7.0
+  enabled: true
+  exportFilename: /var/log/tetragon/tetragon.log
+  exportFileMaxSizeMB: 50
+  exportFileRotationInterval: "1h"
+  exportFileMaxBackups: 3
+  exportAllowList: |
+    {"event_set":["PROCESS_EXEC","PROCESS_EXIT","PROCESS_KPROBE"]}
+  enablePolicyFilter: true
+  enableK8sAPI: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: "1", memory: 1Gi }
+
+tetragonOperator:
+  enabled: true
+  image:
+    repository: quay.io/cilium/tetragon-operator
+    tag: v1.7.0
+  replicas: 1

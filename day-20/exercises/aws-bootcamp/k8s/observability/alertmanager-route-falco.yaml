@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: falco-runtime
+  namespace: observability
+spec:
+  route:
+    groupBy: ["alertname", "k8s_ns_name"]
+    groupWait: 10s
+    groupInterval: 1m
+    repeatInterval: 1h
+    receiver: bootcamp-oncall-runtime
+    matchers:
+      - name: source
+        value: falco
+        matchType: =
+  receivers:
+    - name: bootcamp-oncall-runtime
+      webhookConfigs:
+        - url: http://bootcamp-oncall-webhook.observability.svc.cluster.local/falco
+          sendResolved: false

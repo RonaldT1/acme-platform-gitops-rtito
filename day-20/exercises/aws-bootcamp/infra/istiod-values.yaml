@@ -1,0 +1,29 @@
+profile: ambient
+revision: ""
+global:
+  istioNamespace: istio-system
+  hub: docker.io/istio
+  tag: 1.30.0
+  multiCluster:
+    clusterName: bootcamp-rtito-day20-eks
+pilot:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  autoscaleEnabled: true
+  autoscaleMin: 2
+  autoscaleMax: 5
+meshConfig:
+  defaultConfig:
+    proxyMetadata: {}
+  accessLogFile: /dev/stdout
+  enableTracing: true
+  extensionProviders:
+    - name: otel
+      opentelemetry:
+        port: 4317
+        service: opentelemetry-collector.observability.svc.cluster.local

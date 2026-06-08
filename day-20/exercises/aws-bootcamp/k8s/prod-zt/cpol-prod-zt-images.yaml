@@ -1,0 +1,68 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: prod-zt-verify-images
+spec:
+  validationFailureAction: Enforce
+  background: false
+  failurePolicy: Fail
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: signature-required
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - prod-zt
+      verifyImages:
+        - imageReferences:
+            - "711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:*"
+            - "711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api@*"
+          imageRegistryCredentials:
+            secrets:
+              - kyverno-ecr-creds
+          mutateDigest: true
+          verifyDigest: true
+          required: true
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    subject: "https://github.com/amartinez-aquaware/bootcamp-2026-4/.github/workflows/build-sign-attest.yml@refs/heads/rtito-aquaware"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: "https://rekor.sigstore.dev"
+    - name: sbom-attestation-required
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - prod-zt
+      verifyImages:
+        - imageReferences:
+            - "711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:*"
+            - "711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api@*"
+          imageRegistryCredentials:
+            secrets:
+              - kyverno-ecr-creds
+          required: true
+          attestations:
+            - type: https://cyclonedx.org/schema
+              attestors:
+                - count: 1
+                  entries:
+                    - keyless:
+                        subject: "https://github.com/amartinez-aquaware/bootcamp-2026-4/.github/workflows/build-sign-attest.yml@refs/heads/rtito-aquaware"
+                        issuer: "https://token.actions.githubusercontent.com"
+                        rekor:
+                          url: "https://rekor.sigstore.dev"
+              conditions:
+                - all:
+                    - key: "{{ length(@.predicate.vulnerabilities[?(@.ratings[?(@.severity == 'critical')])]) }}"
+                      operator: Equals
+                      value: 0
+                      message: "Image SBOM lists 1+ CRITICAL vulnerabilities - rejected"
