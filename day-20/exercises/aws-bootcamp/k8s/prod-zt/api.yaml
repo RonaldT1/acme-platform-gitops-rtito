@@ -31,21 +31,34 @@ spec:
     spec:
       serviceAccountName: bootcamp-api
       automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: api
-          image: 711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:REPLACE_IMAGE_TAG
+          image: 711387135481.dkr.ecr.us-east-1.amazonaws.com/bootcamp-api:b9ed51cc48866e5421f272cb759b89eca8c0295d
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               name: http
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: http
+            exec:
+              command:
+                - node
+                - -e
+                - >
+                  require('http').get('http://127.0.0.1:3000/healthz', (res) =>
+                  process.exit(res.statusCode === 200 ? 0 : 1)).on('error', ()
+                  => process.exit(1))
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
+            exec:
+              command:
+                - node
+                - -e
+                - >
+                  require('http').get('http://127.0.0.1:3000/healthz', (res) =>
+                  process.exit(res.statusCode === 200 ? 0 : 1)).on('error', ()
+                  => process.exit(1))
             initialDelaySeconds: 15
             periodSeconds: 10
           env:
@@ -103,6 +116,11 @@ spec:
         app: bootcamp-frontend
     spec:
       serviceAccountName: frontend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: curl
           image: curlimages/curl:8.8.0
@@ -110,6 +128,11 @@ spec:
           command:
             - sleep
             - infinity
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: 50m

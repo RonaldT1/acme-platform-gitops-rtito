@@ -8,6 +8,13 @@ spec:
     matchLabels:
       app: bootcamp-api
   ingress:
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             io.kubernetes.pod.namespace: prod-zt

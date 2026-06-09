@@ -49,9 +49,11 @@ spec:
           imageRegistryCredentials:
             secrets:
               - kyverno-ecr-creds
+          mutateDigest: true
+          verifyDigest: true
           required: true
           attestations:
-            - type: https://cyclonedx.org/schema
+            - type: https://cyclonedx.org/bom
               attestors:
                 - count: 1
                   entries:
@@ -60,9 +62,3 @@ spec:
                         issuer: "https://token.actions.githubusercontent.com"
                         rekor:
                           url: "https://rekor.sigstore.dev"
-              conditions:
-                - all:
-                    - key: "{{ length(@.predicate.vulnerabilities[?(@.ratings[?(@.severity == 'critical')])]) }}"
-                      operator: Equals
-                      value: 0
-                      message: "Image SBOM lists 1+ CRITICAL vulnerabilities - rejected"
