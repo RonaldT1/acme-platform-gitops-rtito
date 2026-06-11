@@ -1,0 +1,14 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform.lock.hcl
+*.tfvars
+!example.tfvars
+.env
+.envrc
+vendor/
+dist/
+*.log
+.vscode/
+.idea/
