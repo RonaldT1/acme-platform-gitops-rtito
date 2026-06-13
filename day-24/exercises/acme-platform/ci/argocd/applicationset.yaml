@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: rtito-hello
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+          - env: sandbox
+            rendering: helm
+            namespace: rtito-hello-helm
+            path: day-24/exercises/acme-platform/helm/hello
+          - env: sandbox
+            rendering: kustomize
+            namespace: rtito-hello-kustomize
+            path: day-24/exercises/acme-platform/kustomize/overlays/sandbox
+  template:
+    metadata:
+      name: 'rtito-hello-{{ .env }}-{{ .rendering }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/amartinez-aquaware/bootcamp-2026-4.git
+        targetRevision: main
+        path: '{{ .path }}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
