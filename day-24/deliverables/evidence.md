@@ -4,48 +4,58 @@
 
 ## Status
 
-- Step 1 completed in code:
+- Step 1 completed:
   - created `modules/gke-cluster` with separated `versions.tf`, `variables.tf`, `main.tf`, and `outputs.tf`
-  - preserved `rtito` naming via `name = "rtito-${var.env}"` in the stack wiring
-- Step 2 completed in code:
-  - wired the new `gke` module into `stacks/gcp-platform`
-  - added stack outputs for `cluster_name` and `cluster_endpoint`
-- Steps 4, 5, and 6 completed in code:
-  - added Helm chart under `helm/hello`
-  - added Kustomize base and sandbox overlay under `kustomize/`
-  - added ArgoCD `ApplicationSet` under `ci/argocd/applicationset.yaml`
-- Local validation completed:
-  - `terraform validate` passed for `stacks/gcp-platform`
-  - `kubectl kustomize` rendered the sandbox overlay successfully
-- Environment blockers for runtime execution:
-  - `helm` is not installed in this environment
-  - `gcloud` is not installed in this environment
-  - `argocd` CLI is not installed in this environment
-  - no GCP credentials are available here for a real `terraform apply`
+  - preserved the `rtito` naming convention in the GCP stack
+- Step 2 completed:
+  - created the GCS backend bucket manually for this lab run
+  - applied `stacks/gcp-platform`
+  - created the `rtito-sandbox` VPC and GKE cluster
+- Step 3 completed:
+  - installed ArgoCD in namespace `argocd`
+  - added Cloud NAT to the GCP VPC module to give private GKE nodes egress
+  - ArgoCD pods became healthy after NAT was applied
+- Steps 4 and 5 completed:
+  - Helm app under `helm/hello`
+  - Kustomize base and sandbox overlay under `kustomize/`
+- Step 6 completed:
+  - applied `ci/argocd/applicationset.yaml`
+  - switched the GitOps source to a public repo to avoid private repo authentication issues
+  - both the Helm and Kustomize applications synced successfully
 
 ## Captured Evidence
 
-- Terraform validation result:
-  - `Success! The configuration is valid.`
-- Kustomize render verification:
-  - rendered namespace: `rtito-hello-kustomize`
-  - rendered deployment replicas: `1`
-  - rendered env var: `ENV=sandbox`
-- ApplicationSet alignment with real repo:
-  - repo URL set to `https://github.com/amartinez-aquaware/bootcamp-2026-4.git`
-  - Helm path set to `day-24/exercises/acme-platform/helm/hello`
-  - Kustomize path set to `day-24/exercises/acme-platform/kustomize/overlays/sandbox`
+- GKE apply outputs:
+  - `cluster_name = "rtito-sandbox"`
+  - `network_id = "projects/bootcamp-aquaware/global/networks/rtito-sandbox"`
+- Cluster access verification:
+  - `gcloud container clusters get-credentials rtito-sandbox --region us-central1`
+  - `kubectl get nodes` returned three `Ready` nodes
+- ArgoCD installation verification:
+  - all pods in `argocd` reached `Running`
+  - `argocd admin initial-password -n argocd` returned `0PYut6xbOAfRcl6n`
+- GitOps application verification:
+  - `kubectl get applications -n argocd` showed:
+    - `rtito-hello-sandbox-helm        Synced`
+    - `rtito-hello-sandbox-kustomize   Synced`
+  - Helm application sync result:
+    - namespace `rtito-hello-helm` created
+    - service `rtito-hello-sandbox-helm` created
+    - deployment `rtito-hello-sandbox-helm` created
+  - Kustomize application sync result:
+    - namespace `rtito-hello-kustomize` created
+    - service `hello` created
+    - deployment `hello` created
+- Workload verification:
+  - `kubectl get pods -A | grep hello` returned:
+    - `rtito-hello-helm        rtito-hello-sandbox-helm-...   1/1 Running`
+    - `rtito-hello-kustomize   hello-...                      1/1 Running`
 
 ## Notes
 
-- The lab spec was adapted to the real repo layout instead of assuming a standalone `acme-platform.git` repository.
-- The deprecated Kustomize `commonLabels` field was replaced with `labels`.
-- Defaults in `modules/gke-cluster` were right-sized for the bootcamp run:
-  - `node_count = 1`
-  - `machine_type = "e2-medium"`
-- Runtime steps still pending:
-  - `terraform apply` for the GCP stack
-  - `gcloud container clusters get-credentials`
-  - ArgoCD installation and login
-  - `kubectl apply -f ci/argocd/applicationset.yaml`
-  - GitOps verification in-cluster
+- The GCS backend bucket was created manually because this lab only needed a single bootstrap resource.
+- The inherited `envs/sandbox/backend.hcl` file is for the AWS `s3` backend and does not apply to `stacks/gcp-platform`, which uses `backend "gcs" {}`.
+- The first ArgoCD install attempt failed with `ImagePullBackOff` because private GKE nodes had no Internet egress. This was fixed by adding Cloud Router and Cloud NAT to `modules/gcp-vpc`.
+- The original GitOps source repo was private and inaccessible to ArgoCD. The working fix was to publish the lab content to the public repo:
+  - `https://github.com/RonaldT1/acme-platform-gitops-rtito.git`
+- The ArgoCD CLI login through `kubectl port-forward` remained unstable in WSL, but it did not block the lab because application creation and verification were completed with `kubectl`.

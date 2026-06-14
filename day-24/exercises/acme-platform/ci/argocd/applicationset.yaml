@@ -22,7 +22,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/amartinez-aquaware/bootcamp-2026-4.git
+        repoURL: https://github.com/RonaldT1/acme-platform-gitops-rtito.git
         targetRevision: main
         path: '{{ .path }}'
       destination:
