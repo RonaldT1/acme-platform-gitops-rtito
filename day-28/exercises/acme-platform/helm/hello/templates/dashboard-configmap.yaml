@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-dashboard
+  labels:
+    grafana_dashboard: "1"
+    app: {{ .Chart.Name }}
+data:
+  hello.json: |-
+    {
+      "title": "Hello app",
+      "schemaVersion": 39,
+      "panels": [
+        {
+          "id": 1,
+          "title": "Log volume by app",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "sum(count_over_time({app=\"hello\"} [5m]))",
+              "datasource": {
+                "type": "loki",
+                "uid": "Loki"
+              }
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Error rate",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(rate({app=\"hello\"} |~ \"(?i)error\" [5m]))",
+              "datasource": {
+                "type": "loki",
+                "uid": "Loki"
+              }
+            }
+          ]
+        }
+      ]
+    }

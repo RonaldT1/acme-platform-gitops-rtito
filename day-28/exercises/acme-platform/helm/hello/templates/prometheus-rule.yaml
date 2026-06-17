@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hello-alerting-note
+  labels:
+    app: {{ .Chart.Name }}
+data:
+  README.md: |-
+    This file is documentation-only for the Day 8 sandbox.
+
+    The lab example shows a PrometheusRule using LogQL against Loki:
+
+      sum(rate({app="hello"} |~ "(?i)error" [5m])) > 0.5
+
+    That expression is not valid in a PrometheusRule because PrometheusRule
+    evaluates PromQL, not LogQL. In a production-ready Loki setup, the alert
+    should live in Loki ruler or Grafana-managed alerting.
+
+    For this sandbox, keep the alerting pattern documented here and create the
+    actual alert in Grafana after validating Loki ingestion.
