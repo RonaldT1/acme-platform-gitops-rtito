@@ -2,7 +2,7 @@ nameOverride: hello
 
 image:
   repository: ghcr.io/amartinez-aquaware/bootcamp-2026-4/hello
-  tag: v1
+  tag: v2
   pullPolicy: IfNotPresent
   pullSecrets:
     - ghcr-creds
