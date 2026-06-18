@@ -15,7 +15,7 @@ service:
 
 rollout:
   analysis:
-    prometheusAddress: http://rtito-kube-prometheus-stac-prometheus.observability:9090
+    prometheusAddress: http://rtito-kps-prometheus.observability:9090
     successThreshold: 0.95
     interval: 30s
     count: 3
