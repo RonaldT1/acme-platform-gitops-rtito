@@ -39,6 +39,12 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.service.targetPort }}"
     spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: {{ .Values.nameOverride }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
