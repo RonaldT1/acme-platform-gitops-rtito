@@ -1,0 +1,20 @@
+nameOverride: hello
+
+image:
+  repository: ghcr.io/amartinez-aquaware/bootcamp-2026-4/hello
+  tag: v1
+  pullPolicy: IfNotPresent
+
+replicaCount: 4
+
+service:
+  port: 80
+  targetPort: 8080
+
+rollout:
+  analysis:
+    prometheusAddress: http://kube-prometheus-stack-prometheus.observability:9090
+    successThreshold: 0.95
+    interval: 30s
+    count: 3
+    failureLimit: 1
